@@ -8,11 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
 
 public class UserLogin {
     private Scene loginScene;
@@ -26,36 +22,20 @@ public class UserLogin {
 
     public void initializeComponents() {
         VBox loginLayout = new VBox(10);
-        loginLayout.setPadding(new Insets(20));
-        loginLayout.setBackground(new Background(new BackgroundFill(Color.DARKSLATEGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
-
-        Label titleLabel = new Label("Library Management System");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: white;");
-
-        Label usernameLabel = new Label("Username:");
-        usernameLabel.setTextFill(Color.LIGHTGRAY);
-        usernameField.setStyle("-fx-background-color: #333333; -fx-text-fill: white;");
-
-        Label passwordLabel = new Label("Password:");
-        passwordLabel.setTextFill(Color.LIGHTGRAY);
-        passwordField.setStyle("-fx-background-color: #333333; -fx-text-fill: white;");
+        loginLayout.setPadding(new Insets(10));
         
         Button loginButton = new Button("Sign In");
-        styleButton(loginButton);
         loginButton.setOnAction(event -> authenticate());
-
+        
         Label orLabel = new Label("or");
-        orLabel.setTextFill(Color.LIGHTGRAY);
-
         Button signUpButton = new Button("Sign Up");
-        styleButton(signUpButton);
         signUpButton.setOnAction(e -> showSignUpScene());
-
-        loginLayout.getChildren().addAll(titleLabel, usernameLabel, usernameField,
-                                         passwordLabel, passwordField,
+        
+        loginLayout.getChildren().addAll(new Label("Username:"), usernameField,
+                                         new Label("Password:"), passwordField,
                                          loginButton, orLabel, signUpButton);
 
-        loginScene = new Scene(loginLayout, 350, 300);
+        loginScene = new Scene(loginLayout, 300, 250);
         stage.setTitle("User Login");
         stage.setScene(loginScene);
         stage.show();
@@ -74,8 +54,9 @@ public class UserLogin {
             ResultSet rs = statement.executeQuery();
 
             if (rs.next()) {
-                showAlert("Success", "Login successful.");
-                // Proceed to next screen or functionality
+                String role = rs.getString("role"); // Get the role from the result set
+                Home homePage = new Home(stage, role, username);
+                homePage.initializeComponents();
             } else {
                 showAlert("Authentication Failed", "Invalid username or password.");
             }
@@ -87,53 +68,40 @@ public class UserLogin {
 
     private void showSignUpScene() {
         VBox signUpLayout = new VBox(10);
-        signUpLayout.setPadding(new Insets(20));
-        signUpLayout.setBackground(new Background(new BackgroundFill(Color.DARKSLATEGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
+        signUpLayout.setPadding(new Insets(10));
 
-        Label usernameLabel = new Label("Username:");
-        usernameLabel.setTextFill(Color.LIGHTGRAY);
         TextField newUsername = new TextField();
-        newUsername.setStyle("-fx-background-color: #333333; -fx-text-fill: white;");
-
-        Label emailLabel = new Label("Email:");
-        emailLabel.setTextFill(Color.LIGHTGRAY);
-        TextField emailField = new TextField();
-        emailField.setStyle("-fx-background-color: #333333; -fx-text-fill: white;");
-
-        Label passwordLabel = new Label("Password:");
-        passwordLabel.setTextFill(Color.LIGHTGRAY);
         PasswordField newPassword = new PasswordField();
-        newPassword.setStyle("-fx-background-color: #333333; -fx-text-fill: white;");
+        TextField emailField = new TextField();
 
         Button createAccountButton = new Button("Create Account");
-        styleButton(createAccountButton);
         createAccountButton.setOnAction(e -> {
-            createNewUser(newUsername.getText(), emailField.getText(), newPassword.getText());
+            createNewUser(newUsername.getText(), newPassword.getText(), emailField.getText());
         });
 
-        signUpLayout.getChildren().addAll(usernameLabel, newUsername,
-                                          emailLabel, emailField,
-                                          passwordLabel, newPassword,
+        signUpLayout.getChildren().addAll(new Label("Username:"), newUsername,
+                                          new Label("Password:"), newPassword,
+                                          new Label("Email:"), emailField,
                                           createAccountButton);
 
-        Scene signUpScene = new Scene(signUpLayout, 350, 350);
+        Scene signUpScene = new Scene(signUpLayout, 300, 300);
         stage.setScene(signUpScene);
     }
 
-    private void createNewUser(String username, String email, String password) {
-        String query = "INSERT INTO users (user_name, email, password, role) VALUES (?, ?, ?, 'Customer');";
+    private void createNewUser(String username, String password, String email) {
+        String query = "INSERT INTO users (user_name, password, role, email) VALUES (?, ?, 'Customer', ?);";
 
         try (Connection con = DBUtils.establishConnection();
              PreparedStatement statement = con.prepareStatement(query)) {
 
             statement.setString(1, username);
-            statement.setString(2, email);
-            statement.setString(3, password);
+            statement.setString(2, password);
+            statement.setString(3, email);
             int rowsInserted = statement.executeUpdate();
 
             if (rowsInserted > 0) {
                 showAlert("Success", "New user created successfully.");
-                stage.setScene(loginScene);
+                initializeComponents(); // Go back to login page after sign-up
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -147,10 +115,5 @@ public class UserLogin {
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
-    }
-
-    private void styleButton(Button button) {
-        button.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
-        button.setMinWidth(100);
     }
 }

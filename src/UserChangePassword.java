@@ -1,7 +1,4 @@
 import java.sql.*;
-
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -24,18 +21,20 @@ public class UserChangePassword {
 
     public void initializeComponents() {
         VBox changePasswordLayout = new VBox(10);
-        changePasswordLayout.setPadding(new Insets(10));
-        Button changePasswordButton = new Button("Change Password");
-        changePasswordButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                // changePassword();
-                changePassword();
-            }
-        });
-        changePasswordLayout.getChildren().addAll(new Label("Welcome " + username), new Label("New Password:"),
-                newPasswordField, changePasswordButton);
+        changePasswordLayout.setPadding(new Insets(20));
+        changePasswordLayout.setStyle("-fx-background-color: #1e1e1e;");
 
+        Label welcomeLabel = new Label("Change Password for " + username);
+        welcomeLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16;");
+
+        newPasswordField.setPromptText("Enter new password");
+        newPasswordField.setStyle("-fx-background-color: #333333; -fx-text-fill: white;");
+
+        Button changePasswordButton = new Button("Change Password");
+        changePasswordButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        changePasswordButton.setOnAction(event -> changePassword());
+
+        changePasswordLayout.getChildren().addAll(welcomeLabel, newPasswordField, changePasswordButton);
         changePasswordScene = new Scene(changePasswordLayout, 300, 200);
         stage.setTitle("Change Password");
         stage.setScene(changePasswordScene);
@@ -45,17 +44,15 @@ public class UserChangePassword {
     private void changePassword() {
         String newPassword = newPasswordField.getText();
 
-        // Check if the new password is empty
         if (newPassword.isEmpty()) {
             showAlert("Validation Error", "Password cannot be empty.");
-            return; // Exit the method if the password is empty
+            return;
         }
 
-        Connection con = DBUtils.establishConnection();
-        String query = "UPDATE users SET password=? WHERE username=?;";
+        String query = "UPDATE users SET password=? WHERE user_name=?;";
+        try (Connection con = DBUtils.establishConnection();
+             PreparedStatement statement = con.prepareStatement(query)) {
 
-        try (PreparedStatement statement = con.prepareStatement(query)) {
-            // Using prepared statement to prevent SQL injection
             statement.setString(1, newPassword);
             statement.setString(2, username);
 
@@ -63,11 +60,11 @@ public class UserChangePassword {
 
             if (result == 1) {
                 showAlert("Success", "Password successfully changed");
+                Home homePage = new Home(stage, "Customer", username); // Adjust role if needed
+                homePage.initializeComponents();
             } else {
-                showAlert("Failure", "Failed to update password");
+                showAlert("Failure", "Failed to update password.");
             }
-
-            DBUtils.closeConnection(con, statement);
         } catch (Exception e) {
             e.printStackTrace();
             showAlert("Database Error", "Failed to connect to the database.");
