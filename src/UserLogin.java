@@ -23,17 +23,17 @@ public class UserLogin {
     public void initializeComponents() {
         VBox loginLayout = new VBox(10);
         loginLayout.setPadding(new Insets(10));
-        
+
         Button loginButton = new Button("Sign In");
         loginButton.setOnAction(event -> authenticate());
-        
+
         Label orLabel = new Label("or");
         Button signUpButton = new Button("Sign Up");
         signUpButton.setOnAction(e -> showSignUpScene());
-        
+
         loginLayout.getChildren().addAll(new Label("Username:"), usernameField,
-                                         new Label("Password:"), passwordField,
-                                         loginButton, orLabel, signUpButton);
+                new Label("Password:"), passwordField,
+                loginButton, orLabel, signUpButton);
 
         loginScene = new Scene(loginLayout, 300, 250);
         stage.setTitle("User Login");
@@ -44,10 +44,10 @@ public class UserLogin {
     private void authenticate() {
         String username = usernameField.getText();
         String password = passwordField.getText();
-        
+
         String query = "SELECT * FROM users WHERE user_name=? AND password=?;";
         try (Connection con = DBUtils.establishConnection();
-             PreparedStatement statement = con.prepareStatement(query)) {
+                PreparedStatement statement = con.prepareStatement(query)) {
 
             statement.setString(1, username);
             statement.setString(2, password);
@@ -55,8 +55,20 @@ public class UserLogin {
 
             if (rs.next()) {
                 String role = rs.getString("role"); // Get the role from the result set
-                Home homePage = new Home(stage, role, username);
-                homePage.initializeComponents();
+
+                // Redirect to the appropriate home page
+                if (role.equals("Customer")) {
+                    CustomerHome customerHome = new CustomerHome(stage, username);
+                    customerHome.initializeComponents();
+                } else if (role.equals("Librarian")) {
+                    LibrarianHome librarianHome = new LibrarianHome(stage, username);
+                    librarianHome.initializeComponents();
+                } else if (role.equals("Administrator")) {
+                    AdministratorHome adminHome = new AdministratorHome(stage, username);
+                    adminHome.initializeComponents();
+                } else {
+                    showAlert("Error", "Unknown role.");
+                }
             } else {
                 showAlert("Authentication Failed", "Invalid username or password.");
             }
@@ -80,9 +92,9 @@ public class UserLogin {
         });
 
         signUpLayout.getChildren().addAll(new Label("Username:"), newUsername,
-                                          new Label("Password:"), newPassword,
-                                          new Label("Email:"), emailField,
-                                          createAccountButton);
+                new Label("Password:"), newPassword,
+                new Label("Email:"), emailField,
+                createAccountButton);
 
         Scene signUpScene = new Scene(signUpLayout, 300, 300);
         stage.setScene(signUpScene);
@@ -92,7 +104,7 @@ public class UserLogin {
         String query = "INSERT INTO users (user_name, password, role, email) VALUES (?, ?, 'Customer', ?);";
 
         try (Connection con = DBUtils.establishConnection();
-             PreparedStatement statement = con.prepareStatement(query)) {
+                PreparedStatement statement = con.prepareStatement(query)) {
 
             statement.setString(1, username);
             statement.setString(2, password);

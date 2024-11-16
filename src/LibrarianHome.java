@@ -5,14 +5,12 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.geometry.Insets;
 
-public class Home {
+public class LibrarianHome {
     private Stage stage;
-    private String role;
     private String username;
 
-    public Home(Stage stage, String role, String username) {
+    public LibrarianHome(Stage stage, String username) {
         this.stage = stage;
-        this.role = role;
         this.username = username;
     }
 
@@ -21,7 +19,7 @@ public class Home {
         layout.setPadding(new Insets(20));
         layout.setStyle("-fx-background-color: #1e1e1e;");
 
-        Label welcomeLabel = new Label("Welcome, " + username + " (" + role + ")");
+        Label welcomeLabel = new Label("Welcome, Librarian: " + username);
         welcomeLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18;");
 
         Button changePasswordButton = new Button("Change Password");
@@ -32,7 +30,7 @@ public class Home {
         });
 
         layout.getChildren().addAll(welcomeLabel, changePasswordButton);
-        Scene homeScene = new Scene(layout, 400, 300);
-        stage.setScene(homeScene);
+        Scene librarianScene = new Scene(layout, 400, 300);
+        stage.setScene(librarianScene);
     }
 }

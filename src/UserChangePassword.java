@@ -44,6 +44,7 @@ public class UserChangePassword {
     private void changePassword() {
         String newPassword = newPasswordField.getText();
 
+        // Check if the new password is empty
         if (newPassword.isEmpty()) {
             showAlert("Validation Error", "Password cannot be empty.");
             return;
@@ -51,7 +52,7 @@ public class UserChangePassword {
 
         String query = "UPDATE users SET password=? WHERE user_name=?;";
         try (Connection con = DBUtils.establishConnection();
-             PreparedStatement statement = con.prepareStatement(query)) {
+                PreparedStatement statement = con.prepareStatement(query)) {
 
             statement.setString(1, newPassword);
             statement.setString(2, username);
@@ -59,9 +60,30 @@ public class UserChangePassword {
             int result = statement.executeUpdate();
 
             if (result == 1) {
-                showAlert("Success", "Password successfully changed");
-                Home homePage = new Home(stage, "Customer", username); // Adjust role if needed
-                homePage.initializeComponents();
+                showAlert("Success", "Password successfully changed.");
+
+                // Retrieve the user's role from the database
+                String roleQuery = "SELECT role FROM users WHERE user_name=?;";
+                try (PreparedStatement roleStatement = con.prepareStatement(roleQuery)) {
+                    roleStatement.setString(1, username);
+                    ResultSet rs = roleStatement.executeQuery();
+
+                    if (rs.next()) {
+                        String role = rs.getString("role");
+
+                        // Redirect to the appropriate home page
+                        if (role.equals("Customer")) {
+                            CustomerHome customerHome = new CustomerHome(stage, username);
+                            customerHome.initializeComponents();
+                        } else if (role.equals("Librarian")) {
+                            LibrarianHome librarianHome = new LibrarianHome(stage, username);
+                            librarianHome.initializeComponents();
+                        } else if (role.equals("Administrator")) {
+                            AdministratorHome adminHome = new AdministratorHome(stage, username);
+                            adminHome.initializeComponents();
+                        }
+                    }
+                }
             } else {
                 showAlert("Failure", "Failed to update password.");
             }
