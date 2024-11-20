@@ -28,6 +28,9 @@ public class LibrarianHome {
         // Header Section
         Label welcomeLabel = new Label("Welcome, Librarian: " + username);
         welcomeLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18;");
+        HBox headerBox = new HBox(20);
+        headerBox.setAlignment(Pos.CENTER_LEFT);
+        headerBox.getChildren().addAll(welcomeLabel, createLogoutButton());
 
         // Create main control panel
         GridPane controlPanel = createControlPanel();
@@ -42,7 +45,7 @@ public class LibrarianHome {
         statusBar.setStyle("-fx-text-fill: #90EE90; -fx-background-color: #333333; -fx-padding: 5;");
         statusBar.setMaxWidth(Double.MAX_VALUE);
 
-        mainLayout.getChildren().addAll(welcomeLabel, controlPanel, contentTable, statusBar);
+        mainLayout.getChildren().addAll(headerBox, controlPanel, contentTable, statusBar);
         Scene librarianScene = new Scene(mainLayout, 800, 600);
         stage.setScene(librarianScene);
         stage.setTitle("Library Management System - Librarian");
@@ -85,7 +88,8 @@ public class LibrarianHome {
             createButton("Change Password", () -> {
                 logAction("Accessing password change");
                 new UserChangePassword(stage, username).initializeComponents();
-            })
+            }),
+            createLogoutButton()
         );
 
         // Add sections to grid
@@ -238,5 +242,20 @@ public class LibrarianHome {
     private void updateStatus(String message) {
         Label statusBar = (Label) mainLayout.getChildren().get(mainLayout.getChildren().size() - 1);
         statusBar.setText(message);
+    }
+
+    private Button createLogoutButton() {
+        Button logoutButton = new Button("Logout");
+        logoutButton.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+        logoutButton.setOnAction(e -> handleLogout());
+        return logoutButton;
+    }
+
+    private void handleLogout() {
+        logAction("User logout: " + username);
+        // Clear any sensitive data
+        username = null;
+        // Return to login screen
+        new UserLogin(stage).initializeComponents();
     }
 }

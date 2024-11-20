@@ -50,7 +50,7 @@ public class UserChangePassword {
             return;
         }
 
-        String query = "UPDATE users SET password=? WHERE user_name=?;";
+        String query = "UPDATE users SET password=? WHERE name=?;";
         try (Connection con = DBUtils.establishConnection();
                 PreparedStatement statement = con.prepareStatement(query)) {
 
@@ -63,7 +63,7 @@ public class UserChangePassword {
                 showAlert("Success", "Password successfully changed.");
 
                 // Retrieve the user's role from the database
-                String roleQuery = "SELECT role FROM users WHERE user_name=?;";
+                String roleQuery = "SELECT role FROM users WHERE name=?;";
                 try (PreparedStatement roleStatement = con.prepareStatement(roleQuery)) {
                     roleStatement.setString(1, username);
                     ResultSet rs = roleStatement.executeQuery();

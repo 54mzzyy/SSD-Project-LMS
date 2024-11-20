@@ -5,54 +5,76 @@ import javafx.stage.Stage;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class CustomerHome {
     private Stage stage;
     private String username;
     private TableView<Book> searchResultsTable;
     private TableView<BorrowingRecord> historyTable;
+    private VBox mainLayout;
 
     public CustomerHome(Stage stage, String username) {
         this.stage = stage;
         this.username = username;
+        // Add logging for security audit
+        logAction("Customer login: " + username);
     }
 
     public void initializeComponents() {
         // Create main layout
-        VBox mainLayout = new VBox(20);
+        mainLayout = new VBox(20);
         mainLayout.setPadding(new Insets(20));
         mainLayout.setStyle("-fx-background-color: #1e1e1e;");
 
-        // Welcome header
+        // Welcome header with consistent styling
         Label welcomeLabel = new Label("Welcome, " + username);
         welcomeLabel.setStyle("-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;");
 
-        // Create tab pane for different functionalities
+        HBox headerBox = new HBox(20);
+        headerBox.setAlignment(Pos.CENTER_LEFT);
+        headerBox.getChildren().addAll(welcomeLabel, createLogoutButton());
+
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
-        // Search Books Tab (UC_4)
+        // Create tabs with consistent styling
         Tab searchTab = createSearchBooksTab();
-        
-        // Borrowing History Tab (UC_8)
         Tab historyTab = createBorrowingHistoryTab();
-        
-        // Book Reservation Tab (UC_6)
         Tab reservationTab = createReservationTab();
-
-        // Add all tabs
         tabPane.getTabs().addAll(searchTab, historyTab, reservationTab);
 
-        // User Settings Section
+        // User Settings with consistent styling
         VBox settingsBox = createSettingsSection();
 
-        // Add all components to main layout
-        mainLayout.getChildren().addAll(welcomeLabel, tabPane, settingsBox);
+        // Status bar for system messages
+        Label statusBar = new Label("System Ready");
+        statusBar.setStyle("-fx-text-fill: #90EE90; -fx-background-color: #333333; -fx-padding: 5;");
+        statusBar.setMaxWidth(Double.MAX_VALUE);
 
-        // Create and set the scene
+        mainLayout.getChildren().addAll(headerBox, tabPane, settingsBox, statusBar);
+
         Scene customerScene = new Scene(mainLayout, 800, 600);
         stage.setScene(customerScene);
         stage.setTitle("Library Management System - Customer Portal");
+    }
+
+    private void logAction(String action) {
+        LocalDateTime timestamp = LocalDateTime.now();
+        String logEntry = String.format("[%s] User: %s - Action: %s",
+            timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            username,
+            action
+        );
+        // Implement actual logging logic here
+        System.out.println(logEntry);
+    }
+
+    // Add updateStatus method for consistency
+    private void updateStatus(String message) {
+        Label statusBar = (Label) mainLayout.getChildren().get(mainLayout.getChildren().size() - 1);
+        statusBar.setText(message);
     }
 
     private Tab createSearchBooksTab() {
@@ -190,6 +212,21 @@ public class CustomerHome {
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    private Button createLogoutButton() {
+        Button logoutButton = new Button("Logout");
+        logoutButton.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+        logoutButton.setOnAction(e -> handleLogout());
+        return logoutButton;
+    }
+
+    private void handleLogout() {
+        logAction("User logout: " + username);
+        // Clear any sensitive data
+        username = null;
+        // Return to login screen
+        new UserLogin(stage).initializeComponents();
     }
 }
 

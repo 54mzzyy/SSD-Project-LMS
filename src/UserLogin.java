@@ -45,9 +45,9 @@ public class UserLogin {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        String query = "SELECT * FROM users WHERE user_name=? AND password=?;";
+        String query = "SELECT * FROM users WHERE name=? AND password=?;";
         try (Connection con = DBUtils.establishConnection();
-                PreparedStatement statement = con.prepareStatement(query)) {
+             PreparedStatement statement = con.prepareStatement(query)) {
 
             statement.setString(1, username);
             statement.setString(2, password);
@@ -63,7 +63,7 @@ public class UserLogin {
                 } else if (role.equals("Librarian")) {
                     LibrarianHome librarianHome = new LibrarianHome(stage, username);
                     librarianHome.initializeComponents();
-                } else if (role.equals("Administrator")) {
+                } else if (role.equals("Admin")) {
                     AdministratorHome adminHome = new AdministratorHome(stage, username);
                     adminHome.initializeComponents();
                 } else {
@@ -101,10 +101,10 @@ public class UserLogin {
     }
 
     private void createNewUser(String username, String password, String email) {
-        String query = "INSERT INTO users (user_name, password, role, email) VALUES (?, ?, 'Customer', ?);";
+        String query = "INSERT INTO users (name, password, role, email) VALUES (?, ?, 'Customer', ?);";
 
         try (Connection con = DBUtils.establishConnection();
-                PreparedStatement statement = con.prepareStatement(query)) {
+             PreparedStatement statement = con.prepareStatement(query)) {
 
             statement.setString(1, username);
             statement.setString(2, password);
