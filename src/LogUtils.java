@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 
 public class LogUtils {
 
-    private static final String LOG_FILE_PATH = "C:\\Users\\54mx1\\OneDrive\\Desktop\\SSD-Project-LMS\\src\\application_logs.txt"; // Log file path
+    private static final String LOG_FILE_PATH = ".\\application_logs.txt"; // Log file path
 
     /**
      * Logs an action to the log file.

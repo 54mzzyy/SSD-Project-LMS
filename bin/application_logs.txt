@@ -1,4 +1,0 @@
-[2024-11-23 21:10:50] User ID: -1 - Action: User added successfully: anne, Role: CUSTOMER
-[2024-11-23 21:11:07] User ID: 7 - Action: User deleted successfully: ahmed
-[2024-11-23 22:31:01] User ID: 1 - Action: Successful login - Role: Admin
-[2024-11-23 22:32:25] User ID: -1 - Action: User added successfully: ali, Role: CUSTOMER

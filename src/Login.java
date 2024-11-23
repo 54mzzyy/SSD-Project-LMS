@@ -66,7 +66,7 @@ public class Login {
     
                 switch (role.toUpperCase()) {
                     case "CUSTOMER":
-                        app.showCustomerDashboard(username);
+                        app.showCustomerDashboard(username, userId);
                         break;
                     case "LIBRARIAN":
                         app.showLibrarianDashboard(username);

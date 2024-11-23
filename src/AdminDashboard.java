@@ -174,7 +174,7 @@ public class AdminDashboard {
     }
 
     private void loadLogsFromFile() {
-    String logFile = "src/application_logs.txt";
+    String logFile = "./application_logs.txt";
     try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
         String line;
         int logId = 1;

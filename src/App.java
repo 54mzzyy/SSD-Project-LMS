@@ -28,8 +28,8 @@ public class App extends Application {
         stage.show();
     }
 
-    public void showCustomerDashboard(String username/*, int id*/) {
-        CustomerDashboard customerDashboard = new CustomerDashboard(stage, this, username);
+    public void showCustomerDashboard(String username, int id) {
+        CustomerDashboard customerDashboard = new CustomerDashboard(id);
         stage.setScene(new Scene(customerDashboard.getLayout(), 800, 600));
         stage.show();
     }
