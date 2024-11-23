@@ -28,20 +28,20 @@ public class App extends Application {
         stage.show();
     }
 
-    public void showCustomerDashboard(String username) {
+    public void showCustomerDashboard(String username/*, int id*/) {
         CustomerDashboard customerDashboard = new CustomerDashboard(stage, this, username);
         stage.setScene(new Scene(customerDashboard.getLayout(), 800, 600));
         stage.show();
     }
 
-    public void showLibrarianDashboard(String username) {
+    public void showLibrarianDashboard(String username/*, int id*/) {
         LibrarianDashboard librarianDashboard = new LibrarianDashboard(stage, this, username);
         stage.setScene(new Scene(librarianDashboard.getLayout(), 800, 600));
         stage.show();
     }
 
-    public void showAdministratorDashboard(String username) {
-        AdministratorDashboard administratorDashboard = new AdministratorDashboard(stage, this, username);
+    public void showAdministratorDashboard(String username/*, int id*/) {
+        AdminDashboard administratorDashboard = new AdminDashboard(stage, this);
         stage.setScene(new Scene(administratorDashboard.getLayout(), 800, 600));
         stage.show();
     }

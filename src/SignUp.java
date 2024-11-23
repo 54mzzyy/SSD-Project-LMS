@@ -59,8 +59,7 @@ public class SignUp {
                 confirmPasswordField,
                 emailField,
                 signUpButton,
-                backButton
-        );
+                backButton);
 
         return layout;
     }
@@ -69,61 +68,63 @@ public class SignUp {
         String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
         return email.matches(emailRegex);
     }
-    
 
     private void handleSignUp(String username, String password, String confirmPassword, String email) {
         if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() || email.isEmpty()) {
+            LogUtils.logAction(-1, "Sign-up failed: Validation error - missing fields");
             showAlert(Alert.AlertType.WARNING, "Validation Error", "All fields are required.");
             return;
         }
-    
+
         if (!password.equals(confirmPassword)) {
+            LogUtils.logAction(-1, "Sign-up failed: Validation error - passwords do not match");
             showAlert(Alert.AlertType.WARNING, "Validation Error", "Passwords do not match.");
             return;
         }
-    
+
         if (!isValidEmail(email)) {
+            LogUtils.logAction(-1, "Sign-up failed: Validation error - invalid email format");
             showAlert(Alert.AlertType.WARNING, "Validation Error", "Invalid email format.");
             return;
         }
-    
+
         try (Connection connection = DBUtils.getConnection()) {
-            // Check if username or email already exists
             String checkUserQuery = "SELECT COUNT(*) AS user_count FROM users WHERE username = ? OR email = ?";
             PreparedStatement checkUserStmt = connection.prepareStatement(checkUserQuery);
             checkUserStmt.setString(1, username);
             checkUserStmt.setString(2, email);
-    
+
             var resultSet = checkUserStmt.executeQuery();
             if (resultSet.next()) {
                 int userCount = resultSet.getInt("user_count");
                 if (userCount > 0) {
+                    LogUtils.logAction(-1, "Sign-up failed: Username or email already taken - " + username);
                     showAlert(Alert.AlertType.ERROR, "User Exists", "Username or email is already taken.");
                     return;
                 }
             }
-    
-            // Insert the new user as a Customer
+
             String insertUserQuery = "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)";
             PreparedStatement insertUserStmt = connection.prepareStatement(insertUserQuery);
             insertUserStmt.setString(1, username);
             insertUserStmt.setString(2, password);
             insertUserStmt.setString(3, email);
             insertUserStmt.setString(4, "CUSTOMER");
-    
+
             int rowsInserted = insertUserStmt.executeUpdate();
             if (rowsInserted > 0) {
+                LogUtils.logAction(-1, "Sign-up successful for username: " + username);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Sign-up successful! You can now log in.");
-                app.showLoginScreen(); // Redirect to login screen after successful sign-up
+                app.showLoginScreen();
             } else {
+                LogUtils.logAction(-1, "Sign-up failed: Database error for username: " + username);
                 showAlert(Alert.AlertType.ERROR, "Error", "An error occurred during sign-up.");
             }
         } catch (SQLException e) {
+            LogUtils.logAction(-1, "Sign-up failed: Exception - " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Database Error", "An error occurred: " + e.getMessage());
         }
     }
-    
-    
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);

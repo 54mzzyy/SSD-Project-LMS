@@ -1,13 +1,13 @@
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
+//import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+//import java.sql.Connection;
+//import java.sql.PreparedStatement;
+//import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class Login {
@@ -49,21 +49,21 @@ public class Login {
     private void handleLogin(String username, String password) {
         if (username.isEmpty() || password.isEmpty()) {
             showAlert(Alert.AlertType.WARNING, "Validation Error", "Please fill in all fields.");
+            LogUtils.logAction(-1, "Login failed: Missing username or password");
             return;
         }
-
-        try (Connection connection = DBUtils.getConnection()) {
-            String query = "SELECT role FROM users WHERE username = ? AND password = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1, username);
-            statement.setString(2, password);
-
-            ResultSet resultSet = statement.executeQuery();
-
-            if (resultSet.next()) {
-                String role = resultSet.getString("role");
-
-                // Redirect user based on role
+    
+        try {
+            // Authenticate user using the DBUtils class
+            int userId = DBUtils.authenticateUser(username, password);
+    
+            if (userId != -1) {
+                // Fetch user role from DB
+                String role = DBUtils.getUserRole(userId);
+    
+                // Log successful login
+                LogUtils.logAction(userId, "Successful login - Role: " + role);
+    
                 switch (role.toUpperCase()) {
                     case "CUSTOMER":
                         app.showCustomerDashboard(username);
@@ -76,14 +76,19 @@ public class Login {
                         break;
                     default:
                         showAlert(Alert.AlertType.ERROR, "Login Failed", "Invalid role assigned to the user.");
+                        LogUtils.logAction(userId, "Login failed: Invalid role");
                 }
             } else {
                 showAlert(Alert.AlertType.ERROR, "Login Failed", "Invalid username or password.");
+                LogUtils.logAction(-1, "Login failed: Invalid username or password");
             }
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Database Error", "An error occurred while connecting to the database: " + e.getMessage());
+            LogUtils.logAction(-1, "Login failed: Database error - " + e.getMessage());
         }
     }
+    
+    
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
