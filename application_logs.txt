@@ -1,0 +1,17 @@
+[2024-11-24 15:14:57] User ID: 5 - Action: Successful login - Role: Customer
+[2024-11-25 00:42:08] User ID: 1 - Action: Successful login - Role: Admin
+[2024-11-25 01:09:31] User ID: 1 - Action: Successful login - Role: Admin
+[2024-11-25 01:10:07] User ID: -1 - Action: User added successfully: hassan, Role: LIBRARIAN
+[2024-11-25 01:13:11] User ID: 1 - Action: Successful login - Role: Admin
+[2024-11-25 01:13:52] User ID: -1 - Action: User added successfully: samantha, Role: ADMIN
+[2024-11-25 01:20:55] User ID: 13 - Action: Successful login - Role: Admin
+[2024-11-25 01:21:04] User ID: 12 - Action: User deleted successfully: hassan
+[2024-11-25 02:58:24] User ID: 5 - Action: Successful login - Role: Customer
+[2024-11-25 02:58:35] User ID: 5 - Action: Cancelled reservation with ID: 4
+[2024-11-25 02:58:53] User ID: 5 - Action: Reserved book with ID: 40
+[2024-11-25 02:59:20] User ID: 1 - Action: Successful login - Role: Admin
+[2024-11-25 03:58:44] User ID: 5 - Action: Successful login - Role: Customer
+[2024-11-25 04:19:25] User ID: 5 - Action: Successful login - Role: Customer
+[2024-11-25 04:19:38] User ID: 5 - Action: Reserved book with ID: 40
+[2024-11-25 04:20:33] User ID: 5 - Action: Successful login - Role: Customer
+[2024-11-25 04:33:49] User ID: 4 - Action: Successful login - Role: Librarian

@@ -108,6 +108,33 @@ public class DBUtils {
         }
     }
 
+    public static void completeReservation(int reservationId) throws SQLException {
+        String updateReservationQuery = "UPDATE reservations SET status = 'Completed' WHERE reservation_id = ?";
+        String updateBookQuery = "UPDATE books SET copies_available = copies_available - 1 WHERE book_id = (SELECT book_id FROM reservations WHERE reservation_id = ?)";
+
+        try (Connection connection = getConnection();
+             PreparedStatement updateReservationStmt = connection.prepareStatement(updateReservationQuery);
+             PreparedStatement updateBookStmt = connection.prepareStatement(updateBookQuery)) {
+
+            connection.setAutoCommit(false);
+
+            updateReservationStmt.setInt(1, reservationId);
+            updateReservationStmt.executeUpdate();
+
+            updateBookStmt.setInt(1, reservationId);
+            updateBookStmt.executeUpdate();
+
+            connection.commit();
+        } catch (SQLException e) {
+            try (Connection connection = getConnection()) {
+                connection.rollback();
+            } catch (SQLException rollbackException) {
+                rollbackException.printStackTrace();
+            }
+            throw e;
+        }
+    }
+
     public static void cancelReservation(int reservationId) throws SQLException {
         String query = "UPDATE reservations SET status = 'Cancelled' WHERE reservation_id = ?";
         try (Connection connection = getConnection();

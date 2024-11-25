@@ -1,26 +1,25 @@
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 
 public class Book {
     private int bookId;
     private StringProperty title;
     private StringProperty author;
-    private String publisher;
+    private StringProperty publisher;
     private String isbn;
-    private int yearPublished;
-    private String category;
-    private int copiesAvailable;
+    private IntegerProperty yearPublished;
+    private StringProperty category;
+    private IntegerProperty copiesAvailable;
 
     // Constructor
     public Book(int bookId, String title, String author, String publisher, String isbn, int yearPublished, String category, int copiesAvailable) {
         this.bookId = bookId;
         this.title = new SimpleStringProperty(title);
         this.author = new SimpleStringProperty(author);
-        this.publisher = publisher;
+        this.publisher = new SimpleStringProperty(publisher);
         this.isbn = isbn;
-        this.yearPublished = yearPublished;
-        this.category = category;
-        this.copiesAvailable = copiesAvailable;
+        this.yearPublished = new SimpleIntegerProperty(yearPublished);
+        this.category = new SimpleStringProperty(category);
+        this.copiesAvailable = new SimpleIntegerProperty(copiesAvailable);
     }
 
     // Getters and Setters
@@ -57,11 +56,15 @@ public class Book {
     }
 
     public String getPublisher() {
-        return publisher;
+        return publisher.get();
     }
 
     public void setPublisher(String publisher) {
-        this.publisher = publisher;
+        this.publisher.set(publisher);
+    }
+
+    public StringProperty publisherProperty() {
+        return publisher;
     }
 
     public String getIsbn() {
@@ -73,26 +76,38 @@ public class Book {
     }
 
     public int getYearPublished() {
-        return yearPublished;
+        return yearPublished.get();
     }
 
     public void setYearPublished(int yearPublished) {
-        this.yearPublished = yearPublished;
+        this.yearPublished.set(yearPublished);
+    }
+
+    public IntegerProperty yearPublishedProperty() {
+        return yearPublished;
     }
 
     public String getCategory() {
-        return category;
+        return category.get();
     }
 
     public void setCategory(String category) {
-        this.category = category;
+        this.category.set(category);
+    }
+
+    public StringProperty categoryProperty() {
+        return category;
     }
 
     public int getCopiesAvailable() {
-        return copiesAvailable;
+        return copiesAvailable.get();
     }
 
     public void setCopiesAvailable(int copiesAvailable) {
-        this.copiesAvailable = copiesAvailable;
+        this.copiesAvailable.set(copiesAvailable);
+    }
+
+    public IntegerProperty copiesAvailableProperty() {
+        return copiesAvailable;
     }
 }

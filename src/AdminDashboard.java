@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import javax.swing.SwingWorker;
+import java.util.List;
+import java.util.ArrayList;
 
 
 public class AdminDashboard {
@@ -174,33 +177,56 @@ public class AdminDashboard {
     }
 
     private void loadLogsFromFile() {
-    String logFile = "./application_logs.txt";
-    try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
-        String line;
-        int logId = 1;
-        while ((line = reader.readLine()) != null) {
-            // Each line is expected to follow the format:
-            // [TIMESTAMP] UserID: <ID> - <Action>
-            if (line.contains("]")) {
-                int timestampEnd = line.indexOf("]");
-                String timestamp = line.substring(1, timestampEnd);
-                String logDetails = line.substring(timestampEnd + 2); // Skip "] "
+        new SwingWorker<List<Log>, Void>() {
+            @Override
+            protected List<Log> doInBackground() throws Exception {
+                List<Log> logs = new ArrayList<>();
+                String logFile = "./application_logs.txt";
+                try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
+                    String line;
+                    int logId = 1;
+                    while ((line = reader.readLine()) != null) {
+                        // Each line is expected to follow the format:
+                        // [TIMESTAMP] UserID: <ID> - <Action>
+                        if (line.contains("]")) {
+                            int timestampEnd = line.indexOf("]");
+                            String timestamp = line.substring(1, timestampEnd);
+                            String logDetails = line.substring(timestampEnd + 2); // Skip "] "
 
-                // Extract UserID and Action
-                int userIdStart = logDetails.indexOf("UserID: ") + 8;
-                int userIdEnd = logDetails.indexOf(" - ");
-                String action = logDetails.substring(userIdEnd + 3);
+                            // Extract UserID and Action
+                            int userIdStart = logDetails.indexOf("UserID: ") + 8;
+                            int userIdEnd = logDetails.indexOf(" - ");
+                            String action = logDetails.substring(userIdEnd + 3);
 
-                // Create a Log object and add it to the list
-                Log log = new Log(logId, action, timestamp);
-                logList.add(log);
-                logId++;
+                            // Create a Log object and add it to the list
+                            Log log = new Log(logId, action, timestamp);
+                            logs.add(log);
+                            logId++;
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return logs;
             }
-        }
-    } catch (IOException e) {
-        e.printStackTrace();
+
+            @Override
+            protected void done() {
+                try {
+                    logList.clear(); // Clear the list to avoid duplication
+                    logList.addAll(get());
+                    // Update the UI with the new logs if necessary
+                    updateUIWithLogs();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.execute();
     }
-}
+
+    private void updateUIWithLogs() {
+        logTable.setItems(FXCollections.observableArrayList(logList));
+    }
 
     private void addUser(String username, String email, String password, String role) {
         if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {

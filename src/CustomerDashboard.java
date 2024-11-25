@@ -58,8 +58,20 @@ public class CustomerDashboard {
         TableColumn<Book, String> authorColumn = new TableColumn<>("Author");
         authorColumn.setCellValueFactory(cell -> cell.getValue().authorProperty());
 
+        TableColumn<Book, String> publisherColumn = new TableColumn<>("Publisher");
+        publisherColumn.setCellValueFactory(cell -> cell.getValue().publisherProperty());
+
+        TableColumn<Book, Integer> yearPublishedColumn = new TableColumn<>("Year Published");
+        yearPublishedColumn.setCellValueFactory(cell -> cell.getValue().yearPublishedProperty().asObject());
+
+        TableColumn<Book, String> categoryColumn = new TableColumn<>("Category");
+        categoryColumn.setCellValueFactory(cell -> cell.getValue().categoryProperty());
+
+        TableColumn<Book, Integer> copiesAvailableColumn = new TableColumn<>("Available Copies");
+        copiesAvailableColumn.setCellValueFactory(cell -> cell.getValue().copiesAvailableProperty().asObject());
+
         bookTable.setItems(books);
-        bookTable.getColumns().addAll(titleColumn, authorColumn);
+        bookTable.getColumns().addAll(titleColumn, authorColumn, publisherColumn, yearPublishedColumn, categoryColumn, copiesAvailableColumn);
 
         return bookTable;
     }
@@ -106,6 +118,9 @@ public class CustomerDashboard {
             try {
                 DBUtils.reserveBook(userId, bookId);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Book reserved successfully!");
+
+                // Log the action
+                LogUtils.logAction(userId, "Reserved book with ID: " + bookId);
             } catch (SQLException e) {
                 showAlert(Alert.AlertType.ERROR, "Error", "Failed to reserve book: " + e.getMessage());
             }
@@ -122,6 +137,9 @@ public class CustomerDashboard {
                 DBUtils.cancelReservation(reservationId);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Reservation cancelled successfully!");
                 reservationTable.getItems().remove(selectedReservation); // Remove the cancelled reservation from the table
+                
+                // Log the action
+                LogUtils.logAction(userId, "Cancelled reservation with ID: " + reservationId);
             } catch (SQLException e) {
                 showAlert(Alert.AlertType.ERROR, "Error", "Failed to cancel reservation: " + e.getMessage());
             }
