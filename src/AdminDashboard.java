@@ -2,6 +2,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
@@ -15,7 +16,7 @@ import java.sql.ResultSet;
 import javax.swing.SwingWorker;
 import java.util.List;
 import java.util.ArrayList;
-
+import java.util.Optional;
 
 public class AdminDashboard {
     private Stage stage;
@@ -25,42 +26,54 @@ public class AdminDashboard {
     private TableView<Log> logTable;
     private ObservableList<Log> logList;
     private int userId;
+    private String username;
 
-    public AdminDashboard(Stage stage, App app) {
+    public AdminDashboard(Stage stage, App app, String username, int userId) {
         this.stage = stage;
         this.app = app;
+        this.username = username;
+        this.userId = userId;
         userList = FXCollections.observableArrayList();
         logList = FXCollections.observableArrayList();
     }
 
-    public VBox getLayout() {
+    public void showDashboard() {
         VBox layout = new VBox(20);
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.CENTER);
 
-        // Header
-        Label header = new Label("Admin Dashboard - Manage Users and View Logs");
-        header.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        Label titleLabel = new Label("Admin Dashboard");
+        titleLabel.setStyle("-fx-font-size: 24; -fx-font-weight: bold;");
 
-        // User Table
-        userTable = new TableView<>();
-        setupUserTable();
-        loadUsers(); // Load users from the database
+        Button manageUsersButton = new Button("Manage Users");
+        manageUsersButton.setOnAction(e -> showManageUsersScreen());
 
-        // Log Table
-        logTable = new TableView<>();
-        setupLogTable();
-        loadLogsFromFile(); // Load logs from log file
+        Button viewLogsButton = new Button("View Logs");
+        viewLogsButton.setOnAction(e -> showLogsScreen());
 
-        // Add User Section
-        VBox addUserBox = createAddUserSection();
+        Button changePasswordButton = new Button("Change Password");
+        changePasswordButton.setOnAction(e -> app.showChangePasswordScreen(username));
 
-        // Layout
-        layout.getChildren().addAll(header, userTable, addUserBox, new Label("System Logs"), logTable);
-        return layout;
+        Button logoutButton = new Button("Logout");
+        logoutButton.setOnAction(e -> {
+            LogUtils.logAction(userId, "User logged out");
+            app.showLoginScreen();
+        });
+
+        layout.getChildren().addAll(titleLabel, manageUsersButton, viewLogsButton, changePasswordButton, logoutButton);
+
+        Scene scene = new Scene(layout, 800, 600);
+        stage.setScene(scene);
+        stage.show();
     }
 
-    private void setupUserTable() {
+    private void showManageUsersScreen() {
+        Stage userStage = new Stage();
+        userStage.setTitle("Manage Users");
+
+        userTable = new TableView<>();
+        userTable.setItems(getAllUsers());
+
         TableColumn<User, Integer> idCol = new TableColumn<>("ID");
         idCol.setCellValueFactory(data -> data.getValue().idProperty().asObject());
 
@@ -81,7 +94,7 @@ public class AdminDashboard {
                 deleteButton.setStyle("-fx-background-color: #ff6666; -fx-text-fill: white;");
                 deleteButton.setOnAction(e -> {
                     User user = getTableView().getItems().get(getIndex());
-                    deleteUser(user); // Handle user deletion
+                    deleteUser(user);
                 });
             }
 
@@ -97,65 +110,45 @@ public class AdminDashboard {
         });
 
         userTable.getColumns().addAll(idCol, usernameCol, emailCol, roleCol, actionCol);
-        userTable.setItems(userList);
-    }
-
-    private void setupLogTable() {
-        TableColumn<Log, Integer> logIdCol = new TableColumn<>("Log ID");
-        logIdCol.setCellValueFactory(data -> data.getValue().logIdProperty().asObject());
-    
-        TableColumn<Log, String> actionCol = new TableColumn<>("Action");
-        actionCol.setCellValueFactory(data -> data.getValue().actionProperty());
-    
-        TableColumn<Log, String> timestampCol = new TableColumn<>("Timestamp");
-        timestampCol.setCellValueFactory(data -> data.getValue().timestampProperty());
-    
-        logTable.getColumns().addAll(logIdCol, actionCol, timestampCol);
-    
-        // Load logs from the file
-        logList = FXCollections.observableArrayList();
-        loadLogsFromFile();
-    
-        logTable.setItems(logList);
-    }
-
-    private VBox createAddUserSection() {
-        VBox addUserBox = new VBox(10);
-        addUserBox.setPadding(new Insets(10));
-        addUserBox.setAlignment(Pos.CENTER_LEFT);
-
-        Label addUserHeader = new Label("Add New User");
-        addUserHeader.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-
-        TextField usernameField = new TextField();
-        usernameField.setPromptText("Username");
-
-        TextField emailField = new TextField();
-        emailField.setPromptText("Email");
-
-        PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Password");
-
-        ComboBox<String> roleComboBox = new ComboBox<>();
-        roleComboBox.getItems().addAll("CUSTOMER", "LIBRARIAN", "ADMIN");
-        roleComboBox.setValue("CUSTOMER");
 
         Button addUserButton = new Button("Add User");
-        addUserButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-        addUserButton.setOnAction(e -> {
-            String username = usernameField.getText();
-            String email = emailField.getText();
-            String password = passwordField.getText();
-            String role = roleComboBox.getValue();
-            addUser(username, email, password, role); // Handle adding a new user
-        });
+        addUserButton.setOnAction(e -> showAddUserDialog());
 
-        addUserBox.getChildren().addAll(addUserHeader, usernameField, emailField, passwordField, roleComboBox,
-                addUserButton);
-        return addUserBox;
+        VBox userLayout = new VBox(10, userTable, addUserButton);
+        userLayout.setPadding(new Insets(10));
+
+        Scene scene = new Scene(userLayout, 800, 600);
+        userStage.setScene(scene);
+        userStage.show();
     }
 
-    private void loadUsers() {
+    private void showLogsScreen() {
+        Stage logStage = new Stage();
+        logStage.setTitle("View Logs");
+
+        logTable = new TableView<>();
+        logTable.setItems(getAllLogs());
+
+        TableColumn<Log, Integer> logIdCol = new TableColumn<>("Log ID");
+        logIdCol.setCellValueFactory(data -> data.getValue().logIdProperty().asObject());
+
+        TableColumn<Log, String> actionCol = new TableColumn<>("Action");
+        actionCol.setCellValueFactory(data -> data.getValue().actionProperty());
+
+        TableColumn<Log, String> timestampCol = new TableColumn<>("Timestamp");
+        timestampCol.setCellValueFactory(data -> data.getValue().timestampProperty());
+
+        logTable.getColumns().addAll(logIdCol, actionCol, timestampCol);
+
+        VBox logLayout = new VBox(10, logTable);
+        logLayout.setPadding(new Insets(10));
+
+        Scene scene = new Scene(logLayout, 800, 600);
+        logStage.setScene(scene);
+        logStage.show();
+    }
+
+    private ObservableList<User> getAllUsers() {
         userList.clear();
         try (Connection connection = DBUtils.getConnection()) {
             String query = "SELECT user_id, username, email, role FROM users";
@@ -174,9 +167,11 @@ public class AdminDashboard {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return userList;
     }
 
-    private void loadLogsFromFile() {
+    private ObservableList<Log> getAllLogs() {
+        logList.clear();
         new SwingWorker<List<Log>, Void>() {
             @Override
             protected List<Log> doInBackground() throws Exception {
@@ -186,19 +181,15 @@ public class AdminDashboard {
                     String line;
                     int logId = 1;
                     while ((line = reader.readLine()) != null) {
-                        // Each line is expected to follow the format:
-                        // [TIMESTAMP] UserID: <ID> - <Action>
                         if (line.contains("]")) {
                             int timestampEnd = line.indexOf("]");
                             String timestamp = line.substring(1, timestampEnd);
-                            String logDetails = line.substring(timestampEnd + 2); // Skip "] "
+                            String logDetails = line.substring(timestampEnd + 2);
 
-                            // Extract UserID and Action
                             int userIdStart = logDetails.indexOf("UserID: ") + 8;
                             int userIdEnd = logDetails.indexOf(" - ");
                             String action = logDetails.substring(userIdEnd + 3);
 
-                            // Create a Log object and add it to the list
                             Log log = new Log(logId, action, timestamp);
                             logs.add(log);
                             logId++;
@@ -213,19 +204,63 @@ public class AdminDashboard {
             @Override
             protected void done() {
                 try {
-                    logList.clear(); // Clear the list to avoid duplication
                     logList.addAll(get());
-                    // Update the UI with the new logs if necessary
-                    updateUIWithLogs();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }.execute();
+        return logList;
     }
 
-    private void updateUIWithLogs() {
-        logTable.setItems(FXCollections.observableArrayList(logList));
+    private void showAddUserDialog() {
+        Dialog<User> dialog = new Dialog<>();
+        dialog.setTitle("Add New User");
+
+        ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Password");
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll("CUSTOMER", "LIBRARIAN", "ADMIN");
+        roleComboBox.setValue("CUSTOMER");
+
+        grid.add(new Label("Username:"), 0, 0);
+        grid.add(usernameField, 1, 0);
+        grid.add(new Label("Email:"), 0, 1);
+        grid.add(emailField, 1, 1);
+        grid.add(new Label("Password:"), 0, 2);
+        grid.add(passwordField, 1, 2);
+        grid.add(new Label("Role:"), 0, 3);
+        grid.add(roleComboBox, 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                return new User(0, usernameField.getText(), emailField.getText(), roleComboBox.getValue());
+            }
+            return null;
+        });
+
+        Optional<User> result = dialog.showAndWait();
+        result.ifPresent(user -> {
+            try {
+                addUser(user.getUsername(), user.getEmail(), passwordField.getText(), user.getRole());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private void addUser(String username, String email, String password, String role) {
@@ -246,7 +281,7 @@ public class AdminDashboard {
             stmt.executeUpdate();
             LogUtils.logAction(-1, "User added successfully: " + username + ", Role: " + role);
             showAlert(Alert.AlertType.INFORMATION, "Success", "User added successfully.");
-            loadUsers();
+            userTable.setItems(getAllUsers());
         } catch (Exception e) {
             LogUtils.logAction(-1, "Add user failed: Exception - " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to add user: " + e.getMessage());
@@ -262,7 +297,7 @@ public class AdminDashboard {
             stmt.executeUpdate();
             LogUtils.logAction(user.getId(), "User deleted successfully: " + user.getUsername());
             showAlert(Alert.AlertType.INFORMATION, "Success", "User deleted successfully.");
-            loadUsers();
+            userTable.setItems(getAllUsers());
         } catch (Exception e) {
             LogUtils.logAction(user.getId(), "Delete user failed: Exception - " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to delete user: " + e.getMessage());

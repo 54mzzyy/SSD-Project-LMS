@@ -2,7 +2,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.concurrent.TimeUnit;
 
 public class DBUtils {
     // Database URL, username, and password
@@ -136,16 +136,33 @@ public class DBUtils {
     }
 
     public static void cancelReservation(int reservationId) throws SQLException {
-        String query = "UPDATE reservations SET status = 'Cancelled' WHERE reservation_id = ?";
+        String updateReservationQuery = "UPDATE reservations SET status = 'Cancelled' WHERE reservation_id = ?";
+        String updateBookQuery = "UPDATE books SET copies_available = copies_available + 1 WHERE book_id = (SELECT book_id FROM reservations WHERE reservation_id = ?)";
+
         try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-    
-            statement.setInt(1, reservationId);
-            statement.executeUpdate();
+             PreparedStatement updateReservationStmt = connection.prepareStatement(updateReservationQuery);
+             PreparedStatement updateBookStmt = connection.prepareStatement(updateBookQuery)) {
+
+            connection.setAutoCommit(false);
+
+            updateReservationStmt.setInt(1, reservationId);
+            updateReservationStmt.executeUpdate();
+
+            updateBookStmt.setInt(1, reservationId);
+            updateBookStmt.executeUpdate();
+
+            connection.commit();
+        } catch (SQLException e) {
+            try (Connection connection = getConnection()) {
+                connection.rollback();
+            } catch (SQLException rollbackException) {
+                rollbackException.printStackTrace();
+            }
+            throw e;
         }
     }
 
-        /**
+    /**
      * Retrieves reservations made by a specific user.
      *
      * @param userId the ID of the user
@@ -153,7 +170,7 @@ public class DBUtils {
      * @throws SQLException if a database error occurs
      */
     public static List<Reservation> getReservationsByUserId(int userId) throws SQLException {
-        String query = "SELECT * FROM reservations WHERE user_id = ?";
+        String query = "SELECT r.*, b.title, b.author, b.category FROM reservations r JOIN books b ON r.book_id = b.book_id WHERE r.user_id = ?";
         List<Reservation> reservations = new ArrayList<>();
 
         try (Connection connection = getConnection();
@@ -167,7 +184,10 @@ public class DBUtils {
                             resultSet.getInt("user_id"),
                             resultSet.getInt("book_id"),
                             resultSet.getTimestamp("reservation_date").toString(),
-                            resultSet.getString("status")
+                            resultSet.getString("status"),
+                            resultSet.getString("title"),
+                            resultSet.getString("author"),
+                            resultSet.getString("category")
                     );
                     reservations.add(reservation);
                 }
@@ -176,7 +196,7 @@ public class DBUtils {
         return reservations;
     }
 
-        /**
+    /**
      * Retrieves all transactions in the database.
      *
      * @return a list of transactions
@@ -207,7 +227,7 @@ public class DBUtils {
         return transactions;
     }
 
-        /**
+    /**
      * Retrieves a book by its ID.
      *
      * @param bookId the ID of the book
@@ -239,14 +259,14 @@ public class DBUtils {
         return null; // Book not found
     }
 
-        /**
+    /**
      * Retrieves all reservations in the system.
      *
      * @return a list of reservations
      * @throws SQLException if a database error occurs
      */
     public static List<Reservation> getAllReservations() throws SQLException {
-        String query = "SELECT * FROM reservations";
+        String query = "SELECT r.*, b.title, b.author, b.category FROM reservations r JOIN books b ON r.book_id = b.book_id";
         List<Reservation> reservations = new ArrayList<>();
 
         try (Connection connection = getConnection();
@@ -259,12 +279,194 @@ public class DBUtils {
                 resultSet.getInt("user_id"),
                 resultSet.getInt("book_id"),
                 resultSet.getTimestamp("reservation_date").toString(),
-                resultSet.getString("status")
+                resultSet.getString("status"),
+                resultSet.getString("title"),
+                resultSet.getString("author"),
+                resultSet.getString("category")
             );
             reservations.add(reservation);
             }
         }
         return reservations;
+    }
+
+    /**
+     * Searches for books based on a search text.
+     *
+     * @param searchText the text to search for
+     * @return a list of books that match the search criteria
+     * @throws SQLException if a database error occurs
+     */
+    public static List<Book> searchBooks(String searchText) throws SQLException {
+        String query = "SELECT * FROM books WHERE title LIKE ? OR author LIKE ? OR publisher LIKE ? OR year_published LIKE ? OR category LIKE ?";
+        List<Book> books = new ArrayList<>();
+
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            String searchPattern = "%" + searchText + "%";
+            statement.setString(1, searchPattern);
+            statement.setString(2, searchPattern);
+            statement.setString(3, searchPattern);
+            statement.setString(4, searchPattern);
+            statement.setString(5, searchPattern);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Book book = new Book(
+                        resultSet.getInt("book_id"),
+                        resultSet.getString("title"),
+                        resultSet.getString("author"),
+                        resultSet.getString("publisher"),
+                        resultSet.getString("isbn"),
+                        resultSet.getInt("year_published"),
+                        resultSet.getString("category"),
+                        resultSet.getInt("copies_available")
+                    );
+                    books.add(book);
+                }
+            }
+        }
+        return books;
+    }
+
+    public static List<Book> searchBooks(String userId, String searchText) throws SQLException {
+        RateLimiter rateLimiter = new RateLimiter(5, TimeUnit.MINUTES.toMillis(1)); // Allow 5 requests per minute
+
+        if (!rateLimiter.isAllowed(userId)) {
+            throw new SQLException("Rate limit exceeded. Please try again later.");
+        }
+
+        String query = "SELECT * FROM books WHERE title LIKE ? OR author LIKE ? OR publisher LIKE ? OR year_published LIKE ? OR category LIKE ?";
+        List<Book> books = new ArrayList<>();
+
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            String searchPattern = "%" + searchText + "%";
+            statement.setString(1, searchPattern);
+            statement.setString(2, searchPattern);
+            statement.setString(3, searchPattern);
+            statement.setString(4, searchPattern);
+            statement.setString(5, searchPattern);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Book book = new Book(
+                        resultSet.getInt("book_id"),
+                        resultSet.getString("title"),
+                        resultSet.getString("author"),
+                        resultSet.getString("publisher"),
+                        resultSet.getString("isbn"),
+                        resultSet.getInt("year_published"),
+                        resultSet.getString("category"),
+                        resultSet.getInt("copies_available")
+                    );
+                    books.add(book);
+                }
+            }
+        }
+        return books;
+    }
+
+    public static void borrowBook(int userId, int bookId) throws SQLException {
+        String query = "INSERT INTO transactions (user_id, book_id, transaction_type, transaction_date, due_date, fine) VALUES (?, ?, 'Borrow', ?, ?, 0)";
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, userId);
+            statement.setInt(2, bookId);
+            statement.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+            statement.setString(4, LocalDateTime.now().plusDays(14).toString()); // Assuming a 2-week borrowing period
+
+            statement.executeUpdate();
+        }
+    }
+
+    public static void returnBook(int userId, int bookId) throws SQLException {
+        String query = "INSERT INTO transactions (user_id, book_id, transaction_type, transaction_date, return_date, fine) VALUES (?, ?, 'Return', ?, ?, ?)";
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, userId);
+            statement.setInt(2, bookId);
+            statement.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+            statement.setString(4, LocalDateTime.now().toString());
+            statement.setDouble(5, calculateFine(userId, bookId)); // Assuming a method to calculate fine
+
+            statement.executeUpdate();
+        }
+    }
+
+    private static double calculateFine(int userId, int bookId) throws SQLException {
+        // Implement fine calculation logic here
+        return 0.0;
+    }
+
+    public static void addBook(Book book) throws SQLException {
+        String query = "INSERT INTO books (title, author, publisher, isbn, year_published, category, copies_available) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, book.getTitle());
+            statement.setString(2, book.getAuthor());
+            statement.setString(3, book.getPublisher());
+            statement.setString(4, book.getIsbn());
+            statement.setInt(5, book.getYearPublished());
+            statement.setString(6, book.getCategory());
+            statement.setInt(7, book.getCopiesAvailable());
+
+            statement.executeUpdate();
+        }
+    }
+
+    public static void updateBook(Book book) throws SQLException {
+        String query = "UPDATE books SET title = ?, author = ?, publisher = ?, isbn = ?, year_published = ?, category = ?, copies_available = ? WHERE book_id = ?";
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, book.getTitle());
+            statement.setString(2, book.getAuthor());
+            statement.setString(3, book.getPublisher());
+            statement.setString(4, book.getIsbn());
+            statement.setInt(5, book.getYearPublished());
+            statement.setString(6, book.getCategory());
+            statement.setInt(7, book.getCopiesAvailable());
+            statement.setInt(8, book.getBookId());
+
+            int rowsUpdated = statement.executeUpdate();
+            if (rowsUpdated > 0) {
+                System.out.println("Book updated successfully.");
+            } else {
+                System.out.println("No book found with the given ID.");
+            }
+        }
+    }
+
+    public static void deleteBook(int bookId) throws SQLException {
+        String query = "DELETE FROM books WHERE book_id = ?";
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setInt(1, bookId);
+            statement.executeUpdate();
+        }
+    }
+
+    public static int getUserIdByUsername(String username) throws SQLException {
+        String query = "SELECT user_id FROM users WHERE username = ?";
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, username);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("user_id");
+                }
+            }
+        }
+        return -1; // User not found
     }
 
     /**

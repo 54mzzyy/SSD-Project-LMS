@@ -2,7 +2,6 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-
 public class App extends Application {
 
     private Stage stage;
@@ -29,21 +28,19 @@ public class App extends Application {
     }
 
     public void showCustomerDashboard(String username, int id) {
-        CustomerDashboard customerDashboard = new CustomerDashboard(id);
-        stage.setScene(new Scene(customerDashboard.getLayout(), 800, 600));
-        stage.show();
+        CustomerDashboard customerDashboard = new CustomerDashboard(id, this, username);
+        customerDashboard.showDashboard(stage);
     }
 
-    public void showLibrarianDashboard(String username/*, int id*/) {
-        LibrarianDashboard librarianDashboard = new LibrarianDashboard(stage, this, username);
+    public void showLibrarianDashboard(String username, int id) {
+        LibrarianDashboard librarianDashboard = new LibrarianDashboard(stage, this, username, id);
         stage.setScene(new Scene(librarianDashboard.getLayout(), 800, 600));
         stage.show();
     }
 
-    public void showAdministratorDashboard(String username/*, int id*/) {
-        AdminDashboard administratorDashboard = new AdminDashboard(stage, this);
-        stage.setScene(new Scene(administratorDashboard.getLayout(), 800, 600));
-        stage.show();
+    public void showAdministratorDashboard(String username, int id) {
+        AdminDashboard administratorDashboard = new AdminDashboard(stage, this, username, id);
+        administratorDashboard.showDashboard();
     }
 
     public void showChangePasswordScreen(String username) {

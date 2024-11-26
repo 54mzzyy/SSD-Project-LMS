@@ -47,7 +47,7 @@ public class ChangePassword {
         ));
 
         Button backButton = new Button("Back");
-        backButton.setOnAction(e -> app.showLoginScreen());
+        backButton.setOnAction(e -> handleBackButton());
 
         layout.getChildren().addAll(
                 changePasswordLabel,
@@ -83,6 +83,7 @@ public class ChangePassword {
 
             if (!resultSet.next()) {
                 showAlert(Alert.AlertType.ERROR, "Invalid Old Password", "The old password you entered is incorrect.");
+                LogUtils.logAction(-1, "Password change failed: Invalid old password for user " + username);
                 return;
             }
 
@@ -95,12 +96,52 @@ public class ChangePassword {
             int rowsUpdated = updateStatement.executeUpdate();
             if (rowsUpdated > 0) {
                 showAlert(Alert.AlertType.INFORMATION, "Password Changed", "Your password has been updated successfully.");
+                LogUtils.logAction(-1, "Password changed successfully for user " + username);
                 app.showLoginScreen(); // Redirect to login screen after success
             } else {
                 showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating your password.");
+                LogUtils.logAction(-1, "Password change failed: Database update error for user " + username);
             }
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Database Error", "An error occurred: " + e.getMessage());
+            LogUtils.logAction(-1, "Password change failed: Database error for user " + username + " - " + e.getMessage());
+        }
+    }
+
+    private void handleBackButton() {
+        try {
+            int userId = DBUtils.getUserIdByUsername(username);
+            if (userId == -1) {
+                showAlert(Alert.AlertType.ERROR, "Error", "User not found.");
+                LogUtils.logAction(userId, "Back button pressed: User not found for username " + username);
+                return;
+            }
+
+            String role = DBUtils.getUserRole(userId);
+
+            if (role == null) {
+                showAlert(Alert.AlertType.ERROR, "Error", "User role not found.");
+                LogUtils.logAction(userId, "Back button pressed: User role not found for user " + username);
+                return;
+            }
+
+            switch (role.toUpperCase()) {
+                case "CUSTOMER":
+                    app.showCustomerDashboard(username, userId);
+                    break;
+                case "LIBRARIAN":
+                    app.showLibrarianDashboard(username, userId);
+                    break;
+                case "ADMIN":
+                    app.showAdministratorDashboard(username, userId);
+                    break;
+                default:
+                    showAlert(Alert.AlertType.ERROR, "Error", "Invalid role assigned to the user.");
+                    LogUtils.logAction(userId, "Back button pressed: Invalid role for user " + username);
+            }
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Database Error", "An error occurred: " + e.getMessage());
+            LogUtils.logAction(-1, "Back button pressed: Database error for user " + username + " - " + e.getMessage());
         }
     }
 

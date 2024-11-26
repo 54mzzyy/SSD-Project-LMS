@@ -69,10 +69,10 @@ public class Login {
                         app.showCustomerDashboard(username, userId);
                         break;
                     case "LIBRARIAN":
-                        app.showLibrarianDashboard(username);
+                        app.showLibrarianDashboard(username, userId);
                         break;
                     case "ADMIN":
-                        app.showAdministratorDashboard(username);
+                        app.showAdministratorDashboard(username, userId);
                         break;
                     default:
                         showAlert(Alert.AlertType.ERROR, "Login Failed", "Invalid role assigned to the user.");
