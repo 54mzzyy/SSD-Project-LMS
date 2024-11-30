@@ -1,0 +1,38 @@
+[2024-11-30 12:31:31] User ID: 14 - Action: Successful login - Role: Customer
+[2024-11-30 12:32:33] User ID: -1 - Action: Password change failed: Database error for user max - Unknown column 'salt' in 'field list'
+[2024-11-30 12:32:35] User ID: 14 - Action: User logged out
+[2024-11-30 12:48:32] User ID: 14 - Action: Successful login - Role: Customer
+[2024-11-30 12:48:59] User ID: -1 - Action: Password change failed: Invalid old password for user max
+[2024-11-30 12:49:06] User ID: -1 - Action: Password change failed: Invalid old password for user max
+[2024-11-30 12:49:26] User ID: 14 - Action: User logged out
+[2024-11-30 13:05:46] User ID: 1 - Action: Successful login - Role: Admin
+[2024-11-30 13:06:31] User ID: 1 - Action: User logged out
+[2024-11-30 13:10:38] User ID: 1 - Action: Successful login - Role: Admin
+[2024-11-30 13:11:10] User ID: -1 - Action: User added successfully: sam, Role: ADMIN
+[2024-11-30 13:11:50] User ID: 1 - Action: User logged out
+[2024-11-30 13:12:03] User ID: -1 - Action: Login failed: Invalid username or password
+[2024-11-30 13:12:19] User ID: -1 - Action: Login failed: Invalid username or password
+[2024-11-30 13:12:44] User ID: 1 - Action: Successful login - Role: Admin
+[2024-11-30 13:12:51] User ID: 17 - Action: User deleted successfully: sam
+[2024-11-30 13:14:43] User ID: -1 - Action: User added successfully: sam, Role: ADMIN
+[2024-11-30 13:15:00] User ID: 1 - Action: User logged out
+[2024-11-30 13:15:15] User ID: -1 - Action: Login failed: Invalid username or password
+[2024-11-30 13:21:56] User ID: 18 - Action: Successful login - Role: Admin
+[2024-11-30 13:22:02] User ID: 1 - Action: User deleted successfully: shouq
+[2024-11-30 13:22:21] User ID: -1 - Action: User added successfully: shouq, Role: ADMIN
+[2024-11-30 13:22:51] User ID: -1 - Action: User added successfully: samantha, Role: LIBRARIAN
+[2024-11-30 13:24:19] User ID: -1 - Action: User added successfully: ali, Role: LIBRARIAN
+[2024-11-30 13:24:28] User ID: 18 - Action: User logged out
+[2024-11-30 13:25:47] User ID: -1 - Action: Sign-up failed: Validation error - password does not meet policy
+[2024-11-30 13:26:25] User ID: -1 - Action: Sign-up successful for username: madison
+[2024-11-30 13:26:56] User ID: 22 - Action: Successful login - Role: Customer
+[2024-11-30 13:27:23] User ID: 22 - Action: User logged out
+[2024-11-30 14:15:31] User ID: 22 - Action: Successful login - Role: Customer
+[2024-11-30 14:17:33] User ID: 22 - Action: Cancelled reservation and returned book with ID: 17
+[2024-11-30 14:17:46] User ID: 22 - Action: Reserved and borrowed book with ID: 40
+[2024-11-30 14:17:53] User ID: 22 - Action: User logged out
+[2024-11-30 14:20:26] User ID: 21 - Action: Successful login - Role: Librarian
+[2024-11-30 14:20:38] User ID: 21 - Action: Completed reservation: 18
+[2024-11-30 14:21:13] User ID: 21 - Action: User logged out
+[2024-11-30 14:21:22] User ID: 19 - Action: Successful login - Role: Admin
+[2024-11-30 14:21:43] User ID: 19 - Action: User logged out

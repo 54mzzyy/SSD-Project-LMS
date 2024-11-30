@@ -52,18 +52,18 @@ public class Login {
             LogUtils.logAction(-1, "Login failed: Missing username or password");
             return;
         }
-    
+
         try {
             // Authenticate user using the DBUtils class
             int userId = DBUtils.authenticateUser(username, password);
-    
+
             if (userId != -1) {
                 // Fetch user role from DB
                 String role = DBUtils.getUserRole(userId);
-    
+
                 // Log successful login
                 LogUtils.logAction(userId, "Successful login - Role: " + role);
-    
+
                 switch (role.toUpperCase()) {
                     case "CUSTOMER":
                         app.showCustomerDashboard(username, userId);
@@ -87,8 +87,6 @@ public class Login {
             LogUtils.logAction(-1, "Login failed: Database error - " + e.getMessage());
         }
     }
-    
-    
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);

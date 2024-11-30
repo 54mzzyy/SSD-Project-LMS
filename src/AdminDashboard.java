@@ -17,6 +17,8 @@ import javax.swing.SwingWorker;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.sql.SQLException;
+import java.security.NoSuchAlgorithmException;
 
 public class AdminDashboard {
     private Stage stage;
@@ -270,19 +272,44 @@ public class AdminDashboard {
             return;
         }
 
+        if (!PasswordUtils.isPasswordValid(password)) {
+            LogUtils.logAction(-1, "Add user failed: Validation error - password does not meet policy");
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a digit, and a special character.");
+            return;
+        }
+
         try (Connection connection = DBUtils.getConnection()) {
-            String query = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)";
+            String checkUserQuery = "SELECT COUNT(*) AS user_count FROM users WHERE username = ? OR email = ?";
+            PreparedStatement checkUserStmt = connection.prepareStatement(checkUserQuery);
+            checkUserStmt.setString(1, username);
+            checkUserStmt.setString(2, email);
+
+            var resultSet = checkUserStmt.executeQuery();
+            if (resultSet.next()) {
+                int userCount = resultSet.getInt("user_count");
+                if (userCount > 0) {
+                    LogUtils.logAction(-1, "Add user failed: Username or email already taken - " + username);
+                    showAlert(Alert.AlertType.ERROR, "User Exists", "Username or email is already taken.");
+                    return;
+                }
+            }
+
+            String salt = PasswordUtils.generateSalt();
+            String hashedPassword = PasswordUtils.hashPassword(password, salt);
+
+            String query = "INSERT INTO users (username, email, password, pass_salt, role) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(query);
             stmt.setString(1, username);
             stmt.setString(2, email);
-            stmt.setString(3, password);
-            stmt.setString(4, role);
+            stmt.setString(3, hashedPassword);
+            stmt.setString(4, salt);
+            stmt.setString(5, role);
 
             stmt.executeUpdate();
             LogUtils.logAction(-1, "User added successfully: " + username + ", Role: " + role);
             showAlert(Alert.AlertType.INFORMATION, "Success", "User added successfully.");
             userTable.setItems(getAllUsers());
-        } catch (Exception e) {
+        } catch (SQLException | NoSuchAlgorithmException e) {
             LogUtils.logAction(-1, "Add user failed: Exception - " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to add user: " + e.getMessage());
         }

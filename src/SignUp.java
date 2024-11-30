@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.security.NoSuchAlgorithmException;
 
 public class SignUp {
     private Stage stage;
@@ -88,6 +89,12 @@ public class SignUp {
             return;
         }
 
+        if (!PasswordUtils.isPasswordValid(password)) {
+            LogUtils.logAction(-1, "Sign-up failed: Validation error - password does not meet policy");
+            showAlert(Alert.AlertType.WARNING, "Validation Error", "Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a digit, and a special character.");
+            return;
+        }
+
         try (Connection connection = DBUtils.getConnection()) {
             String checkUserQuery = "SELECT COUNT(*) AS user_count FROM users WHERE username = ? OR email = ?";
             PreparedStatement checkUserStmt = connection.prepareStatement(checkUserQuery);
@@ -104,12 +111,16 @@ public class SignUp {
                 }
             }
 
-            String insertUserQuery = "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)";
+            String salt = PasswordUtils.generateSalt();
+            String hashedPassword = PasswordUtils.hashPassword(password, salt);
+
+            String insertUserQuery = "INSERT INTO users (username, password, pass_salt, email, role) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement insertUserStmt = connection.prepareStatement(insertUserQuery);
             insertUserStmt.setString(1, username);
-            insertUserStmt.setString(2, password);
-            insertUserStmt.setString(3, email);
-            insertUserStmt.setString(4, "CUSTOMER");
+            insertUserStmt.setString(2, hashedPassword);
+            insertUserStmt.setString(3, salt);
+            insertUserStmt.setString(4, email);
+            insertUserStmt.setString(5, "CUSTOMER");
 
             int rowsInserted = insertUserStmt.executeUpdate();
             if (rowsInserted > 0) {
@@ -120,7 +131,7 @@ public class SignUp {
                 LogUtils.logAction(-1, "Sign-up failed: Database error for username: " + username);
                 showAlert(Alert.AlertType.ERROR, "Error", "An error occurred during sign-up.");
             }
-        } catch (SQLException e) {
+        } catch (SQLException | NoSuchAlgorithmException e) {
             LogUtils.logAction(-1, "Sign-up failed: Exception - " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Database Error", "An error occurred: " + e.getMessage());
         }

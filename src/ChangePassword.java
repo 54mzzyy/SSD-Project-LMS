@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.security.NoSuchAlgorithmException;
+
 
 public class ChangePassword {
     private Stage stage;
@@ -72,26 +74,43 @@ public class ChangePassword {
             return;
         }
 
+        if (!PasswordUtils.isPasswordValid(newPassword)) {
+            showAlert(Alert.AlertType.WARNING, "Validation Error", "Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a digit, and a special character.");
+            return;
+        }
+
         try (Connection connection = DBUtils.getConnection()) {
             // Validate old password
-            String validateQuery = "SELECT * FROM users WHERE username = ? AND password = ?";
+            String validateQuery = "SELECT password, pass_salt FROM users WHERE username = ?";
             PreparedStatement validateStatement = connection.prepareStatement(validateQuery);
             validateStatement.setString(1, username);
-            validateStatement.setString(2, oldPassword);
 
             ResultSet resultSet = validateStatement.executeQuery();
 
-            if (!resultSet.next()) {
+            if (resultSet.next()) {
+                String storedHash = resultSet.getString("password");
+                String storedSalt = resultSet.getString("pass_salt");
+
+                if (!PasswordUtils.verifyPassword(oldPassword, storedHash, storedSalt)) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid Old Password", "The old password you entered is incorrect.");
+                    LogUtils.logAction(-1, "Password change failed: Invalid old password for user " + username);
+                    return;
+                }
+            } else {
                 showAlert(Alert.AlertType.ERROR, "Invalid Old Password", "The old password you entered is incorrect.");
                 LogUtils.logAction(-1, "Password change failed: Invalid old password for user " + username);
                 return;
             }
 
             // Update the password in the database
-            String updateQuery = "UPDATE users SET password = ? WHERE username = ?";
+            String salt = PasswordUtils.generateSalt();
+            String hashedPassword = PasswordUtils.hashPassword(newPassword, salt);
+
+            String updateQuery = "UPDATE users SET password = ?, pass_salt = ? WHERE username = ?";
             PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
-            updateStatement.setString(1, newPassword);
-            updateStatement.setString(2, username);
+            updateStatement.setString(1, hashedPassword);
+            updateStatement.setString(2, salt);
+            updateStatement.setString(3, username);
 
             int rowsUpdated = updateStatement.executeUpdate();
             if (rowsUpdated > 0) {
@@ -102,7 +121,7 @@ public class ChangePassword {
                 showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating your password.");
                 LogUtils.logAction(-1, "Password change failed: Database update error for user " + username);
             }
-        } catch (SQLException e) {
+        } catch (SQLException | NoSuchAlgorithmException e) {
             showAlert(Alert.AlertType.ERROR, "Database Error", "An error occurred: " + e.getMessage());
             LogUtils.logAction(-1, "Password change failed: Database error for user " + username + " - " + e.getMessage());
         }

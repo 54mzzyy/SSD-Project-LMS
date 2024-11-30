@@ -31,16 +31,20 @@ public class DBUtils {
     }
 
     public static int authenticateUser(String username, String password) throws SQLException {
-        String query = "SELECT user_id FROM users WHERE username = ? AND password = ?";
+        String query = "SELECT user_id, password, pass_salt FROM users WHERE username = ?";
         try (Connection connection = getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, username);
-            statement.setString(2, password);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    return resultSet.getInt("user_id");
+                    String storedHash = resultSet.getString("password");
+                    String storedSalt = resultSet.getString("pass_salt");
+
+                    if (PasswordUtils.verifyPassword(password, storedHash, storedSalt)) {
+                        return resultSet.getInt("user_id");
+                    }
                 }
             }
         }

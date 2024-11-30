@@ -321,8 +321,12 @@ public class LibrarianDashboard {
                 DBUtils.addBook(book);
                 // Refresh the book table
                 bookTable.getItems().add(book);
+                // Log the action
+                LogUtils.logAction(userId, "Added new book: " + book.getTitle());
             } catch (SQLException e) {
                 e.printStackTrace();
+                // Log the error
+                LogUtils.logAction(userId, "Failed to add new book: " + book.getTitle() + " - " + e.getMessage());
             }
         });
     }
@@ -338,20 +342,20 @@ public class LibrarianDashboard {
             alert.showAndWait();
             return;
         }
-    
+
         Dialog<Book> dialog = new Dialog<>();
         dialog.setTitle("Edit Book");
-    
+
         // Set the button types
         ButtonType editButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(editButtonType, ButtonType.CANCEL);
-    
+
         // Create the fields for the book details
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
-    
+
         TextField titleField = new TextField(selectedBook.getTitle());
         TextField authorField = new TextField(selectedBook.getAuthor());
         TextField publisherField = new TextField(selectedBook.getPublisher());
@@ -359,7 +363,7 @@ public class LibrarianDashboard {
         TextField yearField = new TextField(String.valueOf(selectedBook.getYearPublished()));
         TextField categoryField = new TextField(selectedBook.getCategory());
         TextField copiesField = new TextField(String.valueOf(selectedBook.getCopiesAvailable()));
-    
+
         grid.add(new Label("Title:"), 0, 0);
         grid.add(titleField, 1, 0);
         grid.add(new Label("Author:"), 0, 1);
@@ -374,9 +378,9 @@ public class LibrarianDashboard {
         grid.add(categoryField, 1, 5);
         grid.add(new Label("Copies Available:"), 0, 6);
         grid.add(copiesField, 1, 6);
-    
+
         dialog.getDialogPane().setContent(grid);
-    
+
         // Convert the result to a Book object when the Save button is clicked
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == editButtonType) {
@@ -391,15 +395,19 @@ public class LibrarianDashboard {
             }
             return null;
         });
-    
+
         Optional<Book> result = dialog.showAndWait();
         result.ifPresent(book -> {
             try {
                 DBUtils.updateBook(book);
                 // Refresh the book table
                 bookTable.refresh();
+                // Log the action
+                LogUtils.logAction(userId, "Edited book: " + book.getTitle());
             } catch (SQLException e) {
                 e.printStackTrace();
+                // Log the error
+                LogUtils.logAction(userId, "Failed to edit book: " + book.getTitle() + " - " + e.getMessage());
             }
         });
     }
@@ -418,8 +426,12 @@ public class LibrarianDashboard {
                     DBUtils.deleteBook(selectedBook.getBookId());
                     // Remove the book from the table
                     bookTable.getItems().remove(selectedBook);
+                    // Log the action
+                    LogUtils.logAction(userId, "Deleted book: " + selectedBook.getTitle());
                 } catch (SQLException e) {
                     e.printStackTrace();
+                    // Log the error
+                    LogUtils.logAction(userId, "Failed to delete book: " + selectedBook.getTitle() + " - " + e.getMessage());
                 }
             }
         } else {
@@ -438,8 +450,12 @@ public class LibrarianDashboard {
             try {
                 DBUtils.completeReservation(selectedReservation.getReservationId());
                 reservationTable.setItems(getAllReservations());
+                // Log the action
+                LogUtils.logAction(userId, "Completed reservation: " + selectedReservation.getReservationId());
             } catch (SQLException e) {
                 e.printStackTrace();
+                // Log the error
+                LogUtils.logAction(userId, "Failed to complete reservation: " + selectedReservation.getReservationId() + " - " + e.getMessage());
             }
         }
     }
@@ -450,8 +466,12 @@ public class LibrarianDashboard {
             try {
                 DBUtils.cancelReservation(selectedReservation.getReservationId());
                 reservationTable.setItems(getAllReservations());
+                // Log the action
+                LogUtils.logAction(userId, "Cancelled reservation: " + selectedReservation.getReservationId());
             } catch (SQLException e) {
                 e.printStackTrace();
+                // Log the error
+                LogUtils.logAction(userId, "Failed to cancel reservation: " + selectedReservation.getReservationId() + " - " + e.getMessage());
             }
         }
     }
